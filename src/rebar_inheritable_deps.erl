@@ -21,7 +21,7 @@
 %% THE SOFTWARE.
 %% -----------------------------------------------------------------------------
 %% @author Tim Watson <watson.timothy@gmail.com>
-%% @copyright 2000 - 2013 Tim Watson.
+%% @copyright 2013 Tim Watson.
 %% @doc Rebar Dependency Inheritance Plugin
 %% -----------------------------------------------------------------------------
 -module(rebar_inheritable_deps).
