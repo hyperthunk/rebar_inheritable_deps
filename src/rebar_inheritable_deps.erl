@@ -1,7 +1,5 @@
 %% -----------------------------------------------------------------------------
 %%
-%% Hamcrest Erlang.
-%%
 %% Copyright (c) 2013 Tim Watson (watson.timothy@gmail.com)
 %%
 %% Permission is hereby granted, free of charge, to any person obtaining a copy
