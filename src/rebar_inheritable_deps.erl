@@ -38,10 +38,7 @@
                       {scm(), location(), rev()} |
                       'undefined'.
 -type dependency() :: {name(), version(), source()}.
-
--record(state, {
-    recorded :: [dependency()]
-}).
+-type state()      :: [dependency()].
 
 -define(CONFIG_KEY, ?MODULE).
 
@@ -50,41 +47,47 @@
          %% 'pre_check-deps'/2,
          %% 'pre_list-deps'/2]).
 
-preprocess(Config, _) ->
-    Deps = get_deps(Config),
-    Config2 = set_state(Deps, Config),
-    {ok, Config2, []}.
+preprocess(Config, undefined) ->
+    {ok, Config, []};
+preprocess(Config, AppFile) ->
+    rebar_log:log(debug, "Appfile = ~p~n", [AppFile]),
+    {Config2, AppName} = rebar_app_utils:app_name(Config, AppFile),
+    Deps = get_deps(Config2),
+    Config3 = set_state(AppName, Deps, Config2),
+    {ok, Config3, []}.
 
 get_deps(Config) ->
     rebar_config:get_local(Config, deps, []).
 
-set_state([],   Config) ->
+set_state(_, [], Config) ->
     Config;
-set_state(Deps, Config) ->
+set_state(Context, Deps, Config) ->
     State = get_state(Config),
-    Updated = apply_overrides(Deps, State),
-    NewState = State#state{ recorded=Updated },
+    NewState = apply_overrides(Context, Deps, State),
     Config2 = rebar_config:set_xconf(Config, ?CONFIG_KEY, NewState),
-    rebar_config:set(Config2, deps, Updated).
+    rebar_config:set(Config2, deps,
+                     lists:keydelete(Context, 1, NewState)).
 
 %% If a dependency is 'known' then ignore the supplied version,
 %% otherwise append it to the list of 'known' dependencies.
 %% Once a dependency is 'known', it will override subsequent
 %% declarations, whether they're child *or* sibling nodes of
 %% the current working directory.
-apply_overrides(Deps, State) ->
-    lists:foldl(fun(E={App, _, _}, Acc) ->
+apply_overrides(Context, Deps, State) ->
+    lists:foldl(fun(E, Acc)
+                      when is_tuple(E) andalso
+                           element(1, E) =:= Context ->
+                        Acc;
+                   (E={App, _, _}, Acc) ->
                         case lists:keymember(App, 1, Acc) of
                             true  -> Acc;
                             false -> log_replace(E), [E|Acc]
                         end
-                end, State#state.recorded, Deps).
+                end, State, Deps).
 
 log_replace(E) ->
     rebar_log:log(debug, "ignore/override dependency ~p~n", [E]).
 
 get_state(Config) ->
-    rebar_config:get_xconf(Config, ?CONFIG_KEY, new_state()).
-
-new_state() -> #state{ recorded = [] }.
+    rebar_config:get_xconf(Config, ?CONFIG_KEY, []).
 
