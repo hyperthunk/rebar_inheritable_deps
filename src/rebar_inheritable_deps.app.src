@@ -1,0 +1,9 @@
+{application, rebar_inheritable_deps,
+ [
+  {description, "Depenedency Inheritance for Rebar"},
+  {vsn, "0.0.1"},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]}
+ ]}.
